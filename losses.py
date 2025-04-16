@@ -53,12 +53,12 @@ class PhonemeAlignmentLoss(nn.Module):
         
         # Cross-entropy loss for phone prediction
         loss = F.cross_entropy(
-            first_indices.view(-1, 1), 
-            phone_seq_downsampled.view(-1),
+            first_indices.reshape(-1, 1).float(),  # Convert input to float
+            phone_seq_downsampled.reshape(-1),
             reduction='none'
         )
         
         # Apply mask and average
-        loss = (loss * mask.view(-1)).sum() / (mask.sum() + 1e-8)
+        loss = (loss * mask.reshape(-1)).sum() / (mask.sum() + 1e-8)  # Changed from view to reshape
         
         return loss
