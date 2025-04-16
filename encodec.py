@@ -91,19 +91,27 @@ class EnCodec(nn.Module):
                 stride=z.shape[-1] // f0.shape[-1] if z.shape[-1] > f0.shape[-1] else 1
             )  # [B, C, T_latent]
             
-            # Combine conditioning signals
-            combined_features = torch.cat([
-                f0_features,  # [B, 64, T_f0]
-                phone_features  # [B, C, T_latent]
-            ], dim=1)  # [B, 64+C, T_min]
-            
-            # Resize combined features to match z's time dimension using interpolation
-            combined_features = F.interpolate(
-                combined_features,
+            # FIXED: Make sure both features have the same time dimension before concatenating
+            # Resize both features to match z's time dimension
+            f0_features = F.interpolate(
+                f0_features,
                 size=z.shape[2],
                 mode='linear',
                 align_corners=False
             )
+            
+            phone_features = F.interpolate(
+                phone_features,
+                size=z.shape[2],
+                mode='linear',
+                align_corners=False
+            )
+            
+            # Now both features have the same time dimension
+            combined_features = torch.cat([
+                f0_features,  # [B, 64, T_z]
+                phone_features  # [B, C, T_z]
+            ], dim=1)  # [B, 64+C, T_z]
             
             # Project to latent dimension
             combined_features = combined_features.permute(0, 2, 1)  # [B, T_z, 64+C]
