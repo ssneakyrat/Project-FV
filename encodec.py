@@ -91,23 +91,26 @@ class EnCodec(nn.Module):
                 stride=z.shape[-1] // f0.shape[-1] if z.shape[-1] > f0.shape[-1] else 1
             )  # [B, C, T_latent]
             
-            # Make f0 and phone features match in time dimension
-            target_len = min(f0_features.shape[2], phone_features.shape[2], z.shape[2])
-            f0_features = f0_features[:, :, :target_len]
-            phone_features = phone_features[:, :, :target_len]
-            
             # Combine conditioning signals
             combined_features = torch.cat([
-                f0_features,  # [B, 64, T_latent]
+                f0_features,  # [B, 64, T_f0]
                 phone_features  # [B, C, T_latent]
-            ], dim=1)  # [B, 64+C, T_latent]
+            ], dim=1)  # [B, 64+C, T_min]
+            
+            # Resize combined features to match z's time dimension using interpolation
+            combined_features = F.interpolate(
+                combined_features,
+                size=z.shape[2],
+                mode='linear',
+                align_corners=False
+            )
             
             # Project to latent dimension
-            combined_features = combined_features.permute(0, 2, 1)  # [B, T_latent, 64+C]
-            condition = self.conditioning_projection(combined_features)  # [B, T_latent, latent_dim]
-            condition = condition.permute(0, 2, 1)  # [B, latent_dim, T_latent]
+            combined_features = combined_features.permute(0, 2, 1)  # [B, T_z, 64+C]
+            condition = self.conditioning_projection(combined_features)  # [B, T_z, latent_dim]
+            condition = condition.permute(0, 2, 1)  # [B, latent_dim, T_z]
             
-            # Add conditioning to latent
+            # Now z and condition have the same shape, so we can add them
             z = z + condition
         
         return self.decoder(z)
