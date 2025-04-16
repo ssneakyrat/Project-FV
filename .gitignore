@@ -1,0 +1,6 @@
+tensorboard.ipynb
+datasets/
+cache/
+*.pyc
+logs/
+.ipynb_checkpoints/
