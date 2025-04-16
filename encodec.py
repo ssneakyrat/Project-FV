@@ -54,6 +54,7 @@ class EnCodec(nn.Module):
         )
         
         # Feed-forward layer to project conditioning to the right dimension
+        # Keep the original expected dimension (64 + 128)
         self.conditioning_projection = nn.Linear(64 + 128, latent_dim)
     
     def encode(self, x):
@@ -70,9 +71,22 @@ class EnCodec(nn.Module):
             
             # Prepare phoneme features
             B, T, C = phone_one_hot.shape
+            
+            # Pad phoneme one-hot vectors to 128 dimensions
+            # This assumes the original model expects 128 phoneme dimensions
+            expected_phoneme_dim = 128
+            if C < expected_phoneme_dim:
+                # Create padding
+                padding = torch.zeros(B, T, expected_phoneme_dim - C, device=phone_one_hot.device)
+                # Concatenate with original phoneme vectors
+                padded_phone_one_hot = torch.cat([phone_one_hot, padding], dim=2)
+            else:
+                # If we already have enough dimensions, just use the original or truncate
+                padded_phone_one_hot = phone_one_hot[:, :, :expected_phoneme_dim]
+            
             # Downsample phoneme sequence to match latent frame rate
             phone_features = F.avg_pool1d(
-                phone_one_hot.transpose(1, 2),  # [B, C, T]
+                padded_phone_one_hot.transpose(1, 2),  # [B, C, T]
                 kernel_size=z.shape[-1] // f0.shape[-1] if z.shape[-1] > f0.shape[-1] else 1,
                 stride=z.shape[-1] // f0.shape[-1] if z.shape[-1] > f0.shape[-1] else 1
             )  # [B, C, T_latent]
