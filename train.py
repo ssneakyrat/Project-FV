@@ -57,7 +57,7 @@ def main(args):
         logger=logger,
         callbacks=[checkpoint_callback, lr_monitor],
         log_every_n_steps=config["training"]["log_every_n_steps"],
-        val_check_interval=config["training"]["val_check_interval"],
+        check_val_every_n_epoch=config["logging"]["log_audio_every_n_epochs"],
         precision=config["training"]["precision"],
         accelerator="gpu" if torch.cuda.is_available() else "cpu",
     )
