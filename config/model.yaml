@@ -24,12 +24,12 @@ quantizer:
   num_codebooks: 4
   vectors_per_codebook: 1024
   commitment_weight: 0.25
-  use_commitment_loss: true  # Can be turned off
+  use_commitment_loss: false  # Can be turned off
 
 # Loss weights
 losses:
   reconstruction_weight: 1.0
-  use_phoneme_alignment: true  # Can be turned off
+  use_phoneme_alignment: false  # Can be turned off
   phoneme_alignment_weight: 0.5
 
 # Training configuration
